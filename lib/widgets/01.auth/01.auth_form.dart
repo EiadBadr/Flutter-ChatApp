@@ -1,8 +1,15 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
+
+import 'package:ChatApp/widgets/03.pickers/user_image_picker.dart';
 import 'package:flutter/material.dart';
 
 class AuthForm extends StatefulWidget {
-  final void Function({@required bool isLogin,@required String email,@required String username,@required String password,
+  final void Function(
+      {@required File image,
+      @required bool isLogin,
+      @required String email,
+      @required String username,
+      @required String password,
       @required BuildContext ctx}) _submitAuthForm;
   bool _isLoading;
   AuthForm(this._submitAuthForm, this._isLoading);
@@ -17,23 +24,33 @@ class _AuthFormState extends State<AuthForm> {
   String _email = "";
   String _username = "";
   String _password = "";
-  
+  File _userIamgeFile;
+  void pickedImage(File imgFile) {
+    _userIamgeFile = imgFile;
+  }
 
   void _submit() {
     final isValid = _formKey.currentState.validate();
     FocusScope.of(context).unfocus();
 
-    if(isValid){
+    if (_userIamgeFile == null) {
+      Scaffold.of(context).showSnackBar(SnackBar(
+        content: Text("Please insert an image!"),
+        backgroundColor: Colors.blueAccent,
+      ));
+      return;
+    }
+    if (isValid) {
       _formKey.currentState.save();
       widget._submitAuthForm(
         email: _email.trim(),
         isLogin: _isLogin,
         password: _password.trim(),
-        username:_username.trim(),
-        ctx:context,
+        username: _username.trim(),
+        image: _userIamgeFile,
+        ctx: context,
       );
-      
-      
+
       print(_email);
       print(_password);
       print(_username);
@@ -56,10 +73,11 @@ class _AuthFormState extends State<AuthForm> {
             child: SingleChildScrollView(
               child: Column(
                 children: <Widget>[
+                  if (!_isLogin) UserImagePicker(pickedImage),
                   TextFormField(
                     key: ValueKey('email'),
                     validator: (val) {
-                      if (val.isEmpty ) {
+                      if (val.isEmpty) {
                         return "please enter credentials";
                       }
                       return null;
@@ -96,22 +114,24 @@ class _AuthFormState extends State<AuthForm> {
                   SizedBox(
                     height: 20,
                   ),
-                  if(widget._isLoading) CircularProgressIndicator(),
-                  if(!widget._isLoading)
-                  RaisedButton(
-                    child: Text(_isLogin ? 'LOGIN' : 'Sign Up'),
-                    onPressed: _submit,
-                  ),
-                  if(!widget._isLoading)
-                  FlatButton(
-                    child: Text(_isLogin? "Create new account" : "I already have account"),
-                    onPressed: (){
-                      setState(() {
-                        _isLogin =! _isLogin; 
-                      });
-                    },
-                    textColor: Theme.of(context).primaryColor,
-                  ),
+                  if (widget._isLoading) CircularProgressIndicator(),
+                  if (!widget._isLoading)
+                    RaisedButton(
+                      child: Text(_isLogin ? 'LOGIN' : 'Sign Up'),
+                      onPressed: _submit,
+                    ),
+                  if (!widget._isLoading)
+                    FlatButton(
+                      child: Text(_isLogin
+                          ? "Create new account"
+                          : "I already have account"),
+                      onPressed: () {
+                        setState(() {
+                          _isLogin = !_isLogin;
+                        });
+                      },
+                      textColor: Theme.of(context).primaryColor,
+                    ),
                 ],
               ),
             ),
@@ -120,5 +140,4 @@ class _AuthFormState extends State<AuthForm> {
       ),
     );
   }
-
 }
